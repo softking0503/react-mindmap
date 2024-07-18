@@ -55,11 +55,6 @@ const MindMap = () => {
 
             document.getElementById('jsmind_container')?.addEventListener('contextmenu', handleContextMenu);
             document.addEventListener('click', handleClickOutside);
-
-            return () => {
-                document.getElementById('jsmind_container')?.removeEventListener('contextmenu', handleContextMenu);
-                document.removeEventListener('click', handleClickOutside);
-            };
         };
 
         const fetchData = () => {
@@ -72,43 +67,29 @@ const MindMap = () => {
         loadMindMapInstance();
         fetchData();
 
-        window.addEventListener('projectChanged', loadMindMapInstance);
-        window.addEventListener('projectChanged', fetchData);
-        document.addEventListener('click', loadMindMapInstance);
-        document.addEventListener('click', fetchData);
-
         return () => {
-            window.removeEventListener('projectChanged', loadMindMapInstance);
-            document.removeEventListener('click', loadMindMapInstance);
-            window.removeEventListener('projectChanged', fetchData);
-            document.removeEventListener('click', fetchData);
+            document.getElementById('jsmind_container')?.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('click', handleClickOutside);
         };
     }, [isClient, currentMind]);
 
     const applyNodeBackgroundColors = (mindMapData: mindMap) => {
         mindMapData.data.forEach(node => {
-            const element = document.querySelector(`jmnode[nodeid="${node.id}"]`) as HTMLElement;
-            if (element) {
-                switch (node.type) {
-                    case 'Idea':
-                        element.style.backgroundColor = 'Green';
-                        element.style.color = "black";
-                        break;
-                    case 'Context':
-                        element.style.backgroundColor = 'Gray';
-                        element.style.color = "black";
-                        break;
-                    case 'Content':
-                        element.style.backgroundColor = 'White';
-                        element.style.color = "black";
-                        break;
-                    default:
-                        element.style.backgroundColor = '#3276b1';
-                }
+            switch (node.type) {
+                case 'Idea':
+                    jmRef.current.set_node_color(node.id, 'Green', 'black');
+                    break;
+                case 'Context':
+                    jmRef.current.set_node_color(node.id, 'Gray', 'black');
+                    break;
+                case 'Content':
+                    jmRef.current.set_node_color(node.id, 'White', 'black');
+                    break;
+                default:
+                    jmRef.current.set_node_color(node.id, '#3276b1', 'black');
             }
         });
     };
-
 
     const handleContextMenu = (event: MouseEvent) => {
         event.preventDefault();
@@ -125,7 +106,6 @@ const MindMap = () => {
     const handleClickOutside = (event: MouseEvent) => {
         if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
             setContextMenu({ visible: false, x: 0, y: 0 });
-            window.dispatchEvent(new Event('projectChanged'));
         }
     };
 
@@ -135,9 +115,9 @@ const MindMap = () => {
             alert('Please select a node to add a child.');
             return;
         }
-        const nodeId = `sub${new Date().getTime()}`;
 
-        let newNode = { id: nodeId, parentid: selectedNode.id, topic: nodeId, isroot: false, type: nodeType };
+        const nodeId = `${nodeType.toUpperCase()}_#${new Date().getTime()}`;
+        const newNode = { id: nodeId, parentid: selectedNode.id, topic: `sub_${nodeType}`, isroot: false, type: nodeType };
 
         jmRef.current?.add_node(selectedNode, nodeId, nodeId, { direction: 'right' });
         addNode(selectedNode.id, newNode);

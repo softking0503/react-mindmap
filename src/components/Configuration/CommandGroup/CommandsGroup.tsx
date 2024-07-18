@@ -4,6 +4,7 @@ import Command from "./Command/Command";
 import useMindMapStore from "@/stores/mapStore";
 import { useEffect, useState } from "react";
 import { Commands } from "@/stores/mapStore"
+import { Reorder } from 'framer-motion';
 
 
 export default function CommandsGroup() {
@@ -14,7 +15,10 @@ export default function CommandsGroup() {
 
     const [commands, setCommands] = useState<Commands[]>([]);
 
-    const { saveConfigurationDefaultValue, getDatas, addCommand } = useMindMapStore()
+    const [edit, setEdit] = useState<boolean>(false);
+
+
+    const { saveConfigurationDefaultValue, getDatas, addCommand, saveCommandReorder } = useMindMapStore()
 
     const deleteComponent = (index: Number) => {
         console.log(index);
@@ -31,6 +35,15 @@ export default function CommandsGroup() {
             setDefaultThreadId(data[0].configuration.defaultThreadId);
             setCommands(data[0].configuration.commands)
         }
+    }
+
+    const handleEdit = (id: number) => {
+        setEdit(true);
+        console.log(`Edit button clicked for component with id: ${id}`);
+    };
+
+    const handleApply = (id: number) => {
+        setEdit(false);
     }
 
     useEffect(() => {
@@ -79,9 +92,22 @@ export default function CommandsGroup() {
                 </div>
             </div>
             {
-                commands.map((value, index) => (
-                    <Command key={index} id={index} onDelete={deleteComponent} />
-                ))
+                edit ?
+                    <div>
+                        {commands.map((item, index) => (
+                            <Command key={index} id={index} onDelete={deleteComponent} onEdit={handleEdit} onApply={handleApply} />
+                        ))}
+                    </div>
+                    :
+                    <Reorder.Group axis="y" values={commands} onReorder={(value) => { saveCommandReorder(value); setCommands(value) }}>
+                        {commands.map((item, index) => (
+                            <Reorder.Item key={item.commandKey} value={item}>
+                                <div>
+                                    <Command key={index} id={index} onDelete={deleteComponent} onEdit={handleEdit} onApply={handleApply} />
+                                </div>
+                            </Reorder.Item>
+                        ))}
+                    </Reorder.Group>
             }
             <div>
                 <Button type="primary" onClick={addCommand}>
