@@ -40,30 +40,20 @@ export const loadFromJSON = async (): Promise<ImportedDataState> => {
     });
 };
 
-export const loadFromMM = async (): Promise<Node[]> => {
+
+export const loadFromMM = async (): Promise<File> => {
     return new Promise((resolve, reject) => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'application/mm';
+        input.accept = '.mm';
 
         input.onchange = (event: Event) => {
             const file = (event.target as HTMLInputElement).files?.[0];
-
             if (!file) {
                 reject(new Error('No file selected'));
                 return;
             }
-
-            const reader = new FileReader();
-            reader.onload = (e: ProgressEvent<FileReader>) => {
-                try {
-                    const data = JSON.parse(e.target?.result as string);
-                    resolve(data as Node[]);
-                } catch (err) {
-                    reject(err);
-                }
-            };
-            reader.readAsText(file);
+            resolve(file);
         };
 
         input.click();

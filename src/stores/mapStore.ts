@@ -1,6 +1,7 @@
 import { message } from 'antd';
 import { create } from 'zustand';
 
+
 export interface Node {
     id: string;
     parentid?: string;
@@ -25,6 +26,7 @@ export interface Commands {
     brothers: checkState;
     parent: checkState;
     all: checkState
+    commandKey: string
 }
 
 export interface ReturnCommand {
@@ -37,6 +39,7 @@ export interface ReturnCommand {
     ideas: string[];
     context: string[];
     content: string[];
+    commandKey: string
 };
 
 export interface configuration {
@@ -71,7 +74,8 @@ const defaultReturnCommand: ReturnCommand = {
     select: '',
     ideas: [],
     context: [],
-    content: []
+    content: [],
+    commandKey: new Date().toString()
 };
 
 interface MindMapState {
@@ -109,6 +113,7 @@ interface MindMapState {
     ) => void;
     getCommand: (index: number) => ReturnCommand;
     getCommands: () => Commands[];
+    saveCommandReorder: (commands: Commands[]) => void
 }
 
 const defaultMindMap: mindMap = {
@@ -126,6 +131,84 @@ const defaultMindMap: mindMap = {
         defaultAssistantId: "",
         defaultThreadId: "",
         commands: []
+    }
+};
+
+const jsonToXML = (mindMap: Node[]): string => {
+    const getNodeXML = (node: Node): string => {
+        let backgroundColor = "";
+
+        if (node.type === "Idea") {
+            backgroundColor = '#008000'; // Green
+        } else if (node.type === "Context") {
+            backgroundColor = '#808080'; // Grey
+        } else if (node.type === "Content") {
+            backgroundColor = '#FFFFFF'; // White
+        }
+
+        const children = mindMap.filter(n => n.parentid === node.id);
+        const childrenXML = children.map(getNodeXML).join('');
+        return `<node ID="${node.id}" TEXT="${node.topic}"${node.isroot ? ' ROOT="true"' : ''} BACKGROUND_COLOR="${backgroundColor}">${childrenXML}</node>`;
+    };
+
+    const rootNode = mindMap.find(n => n.isroot);
+    return rootNode ? `<map version="1.0.1">\n<!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->\n${getNodeXML(rootNode)}\n</map>` : '';
+};
+
+const xmlToJson = (xmlString: string): Node[] => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, 'application/xml');
+    const nodes: Node[] = [];
+    let isFirstNode = true;
+
+    const parseNode = (xmlNode: Element, parentId?: string) => {
+        const id = parentId ? xmlNode.getAttribute('ID')! : 'root';
+        const topic = xmlNode.getAttribute('TEXT')!;
+        let type = determineNodeType(xmlNode.getAttribute('BACKGROUND_COLOR'));
+
+        if (type === 'Unknown') {
+            if (isFirstNode) {
+                type = 'default';
+                isFirstNode = false;
+            } else {
+                type = 'Content';
+            }
+        }
+
+        const node: Node = { id, topic, type, parentid: parentId };
+
+        if (!parentId) {
+            node.isroot = true;
+        }
+        nodes.push(node);
+
+        const childNodes = xmlNode.children;
+        for (let i = 0; i < childNodes.length; i++) {
+            parseNode(childNodes[i] as Element, id);
+        }
+    };
+
+    const rootElement = xmlDoc.getElementsByTagName('node')[0];
+
+    if (rootElement) {
+        parseNode(rootElement);
+    }
+
+    return nodes;
+};
+
+
+// Helper function to determine node type based on color
+const determineNodeType = (color: string | null): string => {
+    switch (color) {
+        case '#008000':
+            return 'Idea';
+        case '#808080':
+            return 'Context';
+        case '#FFFFFF':
+            return 'Content';
+        default:
+            return 'Unknown';
     }
 };
 
@@ -273,11 +356,13 @@ const useMindMapStore = create<MindMapState>((set) => ({
                 const parsedMinds = JSON.parse(data) as mindMap[];
                 const mindMapToDownload = parsedMinds[0].data; // Assuming you want to download the first mind map
 
-                const blob = new Blob([JSON.stringify(mindMapToDownload)], { type: 'application/json' });
+                const xmlData = jsonToXML(mindMapToDownload);
+
+                const blob = new Blob([xmlData], { type: 'application/xml' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `New project.mm`;
+                a.download = `${parsedMinds[0].projectName}.mm`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -319,44 +404,43 @@ const useMindMapStore = create<MindMapState>((set) => ({
     },
     loadFreeMind: async () => {
         try {
-            const data = await loadFromMM(); // Assuming loadFromMM returns an array of Node or MindMap
+            const file = await loadFromMM();
+            const fileReader = new FileReader();
 
-            const storageData = localStorage.getItem('mindMapData');
-            if (storageData) {
-                const mindData = JSON.parse(storageData) as mindMap[];
+            fileReader.onload = () => {
+                const xmlString = fileReader.result as string;
+                const jsonData = xmlToJson(xmlString);
 
-                let initMindMapData: mindMap = {
-                    meta: {
-                        name: 'MindMap',
-                        author: 'hizzgdev@163.com',
-                        version: '0.2',
-                    },
-                    format: 'node_array',
-                    projectName: `New Freemind${new Date().getTime()}`,
-                    data: [],
-                    RequestInstruction: '',
-                    configuration: {
-                        openAIKey: "",
-                        defaultAssistantId: "",
-                        defaultThreadId: "",
-                        commands: []
-                    }
-                };
+                const storageData = localStorage.getItem('mindMapData');
+                if (storageData) {
+                    const mindData = JSON.parse(storageData) as mindMap[];
 
-                console.log(data);
+                    const newMindMap: mindMap = {
+                        meta: {
+                            name: 'MindMap',
+                            author: 'hizzgdev@163.com',
+                            version: '0.2',
+                        },
+                        format: 'node_array',
+                        projectName: `New Freemind ${new Date().getTime()}`,
+                        data: jsonData,
+                        RequestInstruction: '',
+                        configuration: {
+                            openAIKey: "",
+                            defaultAssistantId: "",
+                            defaultThreadId: "",
+                            commands: []
+                        }
+                    };
 
-                initMindMapData.data = [
-                    ...initMindMapData.data,
-                    ...data
-                ]
+                    mindData.unshift(newMindMap);
+                    localStorage.setItem('mindMapData', JSON.stringify(mindData));
+                    window.dispatchEvent(new Event('projectChanged'));
+                }
+            };
 
-
-                mindData.unshift(initMindMapData); // Adding initMindMapData to the beginning of mindData
-                localStorage.setItem('mindMapData', JSON.stringify(mindData));
-                window.dispatchEvent(new Event('projectChanged'));
-
-                return true;
-            }
+            fileReader.readAsText(file);
+            return true;
         } catch (error) {
             console.error(error);
         }
@@ -422,6 +506,7 @@ const useMindMapStore = create<MindMapState>((set) => ({
             brothers: brother,
             all: all,
             commands: '',
+            commandKey: new Date().toString()
         };
 
         const storageData = localStorage.getItem("mindMapData");
@@ -527,6 +612,7 @@ const useMindMapStore = create<MindMapState>((set) => ({
                 brothers: brother,
                 all: all,
                 commands,
+                commandKey: new Date().toString()
             };
 
             data[0].configuration.commands[id] = command;
@@ -583,7 +669,8 @@ const useMindMapStore = create<MindMapState>((set) => ({
                 commands: commandData.commands,
                 ideas: idea,
                 context: context,
-                content: content
+                content: content,
+                commandKey: new Date().toString()
             }
 
 
@@ -598,6 +685,20 @@ const useMindMapStore = create<MindMapState>((set) => ({
             const data = JSON.parse(mindMapData);
 
             return data[0].configuration.commands;
+        }
+    },
+    saveCommandReorder: (commands: Commands[]) => {
+        const mindData = localStorage.getItem("mindMapData");
+
+        if (mindData) {
+            const data = JSON.parse(mindData)
+            if (data) {
+                data[0].configuration.commands = commands;
+
+                localStorage.setItem("mindMapData", JSON.stringify(data));
+
+                window.dispatchEvent(new Event('projectChanged'));
+            }
         }
     }
 }));
