@@ -103,6 +103,14 @@ export default function CommandsGroup() {
         setThreadID();
     }, [])
 
+    const handleAddCommand = () => {
+        addCommand();
+        const newCommandIndex = commands.length; // The new command will be the last one in the array
+        setEditingCommandId(newCommandIndex);
+        setEdit(false);
+        setIsClient(true);
+    };
+
     return (
         <div className="w-full flex flex-col gap-[30px]">
             <div className='flex flex-col gap-[20px]'>
@@ -123,6 +131,7 @@ export default function CommandsGroup() {
                         className='w-[230px]'
                         value={defaultAssistantId}
                         onChange={(e) => { setDefaultAssistantId(e.target.value); setIsClient(true) }}
+                        onPressEnter={setThreadID}
                     />
                 </div>
                 <div className="w-[400px] flex justify-between items-center">
@@ -154,7 +163,7 @@ export default function CommandsGroup() {
                     </div>
             }
             <div>
-                <Button type="primary" onClick={addCommand}>
+                <Button type="primary" onClick={handleAddCommand}>
                     Create Command
                 </Button>
             </div>
