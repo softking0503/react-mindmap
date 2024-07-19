@@ -6,7 +6,7 @@ import 'jsmind/style/jsmind.css';
 import CommandSidebar from './CommandSidebar/CommandSidebar';
 import { MinusCircleOutlined, FullscreenOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { mindMap, Commands } from '@/stores/mapStore';
-import { message, Modal, Input } from 'antd';
+import { message, Modal, Input, Button } from 'antd';
 
 const MindMap = () => {
     const reactFlowWrapper = useRef<HTMLDivElement | null>(null);
@@ -17,6 +17,7 @@ const MindMap = () => {
     const [showCommandBar, setShowCommandBar] = useState<boolean>(true);
     const [commands, setCommands] = useState<Commands[]>([]);
     const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [deleteModalVisible, setDeleteModalVisible] = useState<boolean>(false);
     const [currentNode, setCurrentNode] = useState<any>(null);
     const [editedContent, setEditedContent] = useState<string>('');
     const { currentMind, addNode, deleteNode, initializeMindMap, getCommands, updateNodeContent } = useMindMapStore();
@@ -155,19 +156,19 @@ const MindMap = () => {
         }
 
         message.success({
-            content: `Delete ${selectedNode.data.type} node`
+            content: `Deleted ${selectedNode.data.type} node`
         });
         deleteNode(selectedNode.id);
         jmRef.current?.remove_node(selectedNode.id);
         setContextMenu({ visible: false, x: 0, y: 0 });
+        setDeleteModalVisible(false);
     };
 
     const handleEditSave = () => {
         if (currentNode && editedContent) {
             currentNode.topic = editedContent;
             jmRef.current.update_node(currentNode.id, editedContent);
-            console.log(currentNode.id, editedContent);
-            updateNodeContent(currentNode.id, editedContent)
+            updateNodeContent(currentNode.id, editedContent);
             setEditModalVisible(false);
         }
     };
@@ -230,7 +231,7 @@ const MindMap = () => {
                         <li onClick={() => handleAddNode("Content")} className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
                             Add Content Node
                         </li>
-                        <li onClick={handleDeleteNode} className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                        <li onClick={() => setDeleteModalVisible(true)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
                             Delete Node
                         </li>
                         {commands.map((value, index) => (
@@ -263,6 +264,15 @@ const MindMap = () => {
                 keyboard={true}
             >
                 <Input value={editedContent} onPressEnter={() => { handleEditSave(); setEditModalVisible(false) }} onChange={(e) => setEditedContent(e.target.value)} />
+            </Modal>
+            <Modal
+                title="Delete Node"
+                open={deleteModalVisible}
+                onOk={handleDeleteNode}
+                onCancel={() => setDeleteModalVisible(false)}
+                keyboard={true}
+            >
+                <p>Are you sure you want to delete this node?</p>
             </Modal>
         </div>
     );
