@@ -6,6 +6,7 @@ import 'jsmind/style/jsmind.css';
 import CommandSidebar from './CommandSidebar/CommandSidebar';
 import { MinusCircleOutlined, FullscreenOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { mindMap, Commands } from '@/stores/mapStore';
+import { message, Modal, Input } from 'antd';
 
 const MindMap = () => {
     const reactFlowWrapper = useRef<HTMLDivElement | null>(null);
@@ -15,7 +16,10 @@ const MindMap = () => {
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
     const [showCommandBar, setShowCommandBar] = useState<boolean>(true);
     const [commands, setCommands] = useState<Commands[]>([]);
-    const { currentMind, addNode, deleteNode, initializeMindMap, getCommands } = useMindMapStore();
+    const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [currentNode, setCurrentNode] = useState<any>(null);
+    const [editedContent, setEditedContent] = useState<string>('');
+    const { currentMind, addNode, deleteNode, initializeMindMap, getCommands, updateNodeContent } = useMindMapStore();
 
     useEffect(() => {
         setIsClient(true);
@@ -54,6 +58,7 @@ const MindMap = () => {
             applyNodeBackgroundColors(currentMind);
 
             document.getElementById('jsmind_container')?.addEventListener('contextmenu', handleContextMenu);
+            document.getElementById('jsmind_container')?.addEventListener('dblclick', handleNodeDoubleClick);
             document.addEventListener('click', handleClickOutside);
         };
 
@@ -69,6 +74,7 @@ const MindMap = () => {
 
         return () => {
             document.getElementById('jsmind_container')?.removeEventListener('contextmenu', handleContextMenu);
+            document.getElementById('jsmind_container')?.removeEventListener('dblclick', handleNodeDoubleClick);
             document.removeEventListener('click', handleClickOutside);
         };
     }, [isClient, currentMind]);
@@ -109,10 +115,27 @@ const MindMap = () => {
         }
     };
 
+    const handleNodeDoubleClick = (event: MouseEvent) => {
+        const selectedNode = jmRef.current?.get_selected_node();
+        if (!selectedNode) return;
+
+        setCurrentNode(selectedNode);
+        setEditedContent(selectedNode.topic);
+        setEditModalVisible(true);
+    };
+
     const handleAddNode = (nodeType: string) => {
         const selectedNode = jmRef.current?.get_selected_node();
         if (!selectedNode) {
             alert('Please select a node to add a child.');
+            return;
+        }
+
+        if (!nodeType || nodeType === '' || nodeType === 'Node type') {
+            message.error({
+                content: "Please select command type"
+            });
+            setContextMenu({ visible: false, x: 0, y: 0 });
             return;
         }
 
@@ -131,9 +154,22 @@ const MindMap = () => {
             return;
         }
 
+        message.success({
+            content: `Delete ${selectedNode.data.type} node`
+        });
         deleteNode(selectedNode.id);
         jmRef.current?.remove_node(selectedNode.id);
         setContextMenu({ visible: false, x: 0, y: 0 });
+    };
+
+    const handleEditSave = () => {
+        if (currentNode && editedContent) {
+            currentNode.topic = editedContent;
+            jmRef.current.update_node(currentNode.id, editedContent);
+            console.log(currentNode.id, editedContent);
+            updateNodeContent(currentNode.id, editedContent)
+            setEditModalVisible(false);
+        }
     };
 
     const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -219,6 +255,15 @@ const MindMap = () => {
                 </div>
                 {showCommandBar && <CommandSidebar />}
             </div>
+            <Modal
+                title="Edit Node Content"
+                open={editModalVisible}
+                onOk={handleEditSave}
+                onCancel={() => setEditModalVisible(false)}
+                keyboard={true}
+            >
+                <Input value={editedContent} onPressEnter={() => { handleEditSave(); setEditModalVisible(false) }} onChange={(e) => setEditedContent(e.target.value)} />
+            </Modal>
         </div>
     );
 };

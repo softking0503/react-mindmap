@@ -32,7 +32,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "types/jsmind.d.ts"
+    "types/jsmind.d.ts",
+    "pages/api/openai.js"
   ],
   "exclude": [
     "node_modules"
