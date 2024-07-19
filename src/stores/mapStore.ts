@@ -113,7 +113,11 @@ interface MindMapState {
     ) => void;
     getCommand: (index: number) => ReturnCommand;
     getCommands: () => Commands[];
-    saveCommandReorder: (commands: Commands[]) => void
+    saveCommandReorder: (commands: Commands[]) => void;
+    updateNodeContent: (nodeId: string, newContent: string) => void;
+    getDefaultThreadId: () => string;
+    getDefaultAssistantId: () => string;
+    getOpenAIKey: () => string;
 }
 
 const defaultMindMap: mindMap = {
@@ -699,6 +703,53 @@ const useMindMapStore = create<MindMapState>((set) => ({
 
                 window.dispatchEvent(new Event('projectChanged'));
             }
+        }
+    },
+    updateNodeContent: (nodeId: string, newContent: string) => {
+        console.log(nodeId, newContent);
+        const mindMapData = localStorage.getItem("mindMapData");
+
+        if (mindMapData) {
+            const data = JSON.parse(mindMapData)
+
+            data[0].data.map((item: Node) => {
+                if (item.id === nodeId) {
+                    item.topic = newContent;
+                }
+            })
+
+            console.log(data);
+
+            localStorage.setItem("mindMapData", JSON.stringify(data))
+
+            window.dispatchEvent(new Event('projectChanged'))
+        }
+    },
+    getDefaultThreadId: () => {
+        const mindMapData = localStorage.getItem("mindMapData");
+
+        if (mindMapData) {
+            const data = JSON.parse(mindMapData)
+
+            return data[0].configuration.defaultThreadId
+        }
+    },
+    getOpenAIKey: () => {
+        const mindMapData = localStorage.getItem("mindMapData");
+
+        if (mindMapData) {
+            const data = JSON.parse(mindMapData)
+
+            return data[0].configuration.openAIKey
+        }
+    },
+    getDefaultAssistantId: () => {
+        const mindMapData = localStorage.getItem("mindMapData");
+
+        if (mindMapData) {
+            const data = JSON.parse(mindMapData)
+
+            return data[0].configuration.defaultAssistantId
         }
     }
 }));

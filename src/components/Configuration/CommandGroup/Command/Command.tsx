@@ -5,6 +5,7 @@ import { Button, Input, Select, Checkbox, message } from 'antd';
 import type { CheckboxProps } from 'antd';
 import { FullscreenOutlined } from '@ant-design/icons';
 import useMindMapStore from '@/stores/mapStore';
+import axios from 'axios';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -16,12 +17,13 @@ interface CommandProps {
     onDelete: (id: number) => void;
     onEdit: (id: number) => void;
     onApply: (id: number) => void;
+    isEditing: boolean;
 }
 
 const defaultValue: string = "Node type";
 
-export default function Command({ id, onDelete, onEdit, onApply }: CommandProps) {
-    const { deleteCommand, saveCommand, getCommand } = useMindMapStore()
+export default function Command({ id, onDelete, onEdit, onApply, isEditing }: CommandProps) {
+    const { deleteCommand, saveCommand, getCommand, getOpenAIKey, getDefaultAssistantId } = useMindMapStore()
 
     const [showModal, setShowModal] = useState(false);
     const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
@@ -38,7 +40,7 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
     const [threadId, setThreadId] = useState('');
     const [commandsContent, setCommandsContent] = useState('');
 
-    const [editAble, setEditAble] = useState<boolean>(false);
+    // const [editAble, setEditAble] = useState<boolean>(false);
 
     const checkIdeasAll = ideas.length === checkedIdeasList.length;
     const indeterminateIdeas = checkedIdeasList.length > 0 && checkedIdeasList.length < ideas.length;
@@ -72,38 +74,41 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
         setIsClient(true);
     };
 
-    const onDragStart = (event: DragEvent, nodeType: string, commandName: string, CommandType: string) => {
-        if (CommandType === "Node type") {
-            message.error({
-                content: "Select Command Type"
-            });
-            event.preventDefault(); // Prevent the drag event if CommandType is invalid
-            return;
-        }
+    const createThreadID = async () => {
+        try {
+            const openAIKey = getOpenAIKey()
+            const assistantId = getDefaultAssistantId()
 
-        if (CommandType === "Edit Node") {
-            message.error({
-                content: "Select Command Type"
+            const response = await axios.post('/api/openai', {
+                name: "Math Tutor",
+                instructions: "You are a personal math tutor. Write and run code to answer math questions.",
+                model: "gpt-4o",
+                openAIKey: openAIKey,
+                defaultAssistantId: assistantId
             });
-            event.preventDefault(); // Prevent the drag event if CommandType is invalid
-            return;
+            return response.data.id;
+        } catch (error) {
+            console.error('Error creating assistant:', error);
         }
-
-        if (CommandType === "") {
-            message.error({
-                content: "Select Command Type"
-            });
-            event.preventDefault(); // Prevent the drag event if CommandType is invalid
-            return;
-        }
-        const data = JSON.stringify({
-            type: nodeType,
-            commandName: commandName,
-            CommandType: CommandType
-        });
-        event.dataTransfer.setData('application/reactflow', data);
-        event.dataTransfer.effectAllowed = 'move';
     };
+
+    const getThreadID = async () => {
+        const storedRequest = getCommand(id);
+
+        if (storedRequest.threadId === '') {
+            const commandthreadId = await createThreadID();
+
+            if (commandthreadId) {
+                setThreadId(commandthreadId);
+                console.log(commandthreadId);
+                setIsClient(true)
+            }
+        }
+    };
+
+    useEffect(() => {
+        getThreadID();;
+    }, [])
 
     useEffect(() => {
         if (isClient) {
@@ -112,20 +117,26 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
     }, [commandName, commandShortcut, assistantId, threadId, commandsContent, selectedValue, checkedIdeasList, checkedContextList, checkedContentList, isClient]);
 
     useEffect(() => {
-        const storedRequest = getCommand(id);
+        if (!isClient) {
+            const storedRequest = getCommand(id);
 
-        if (storedRequest) {
-            setCheckedIdeasList(storedRequest.ideas || defaultIdeasCheckedList);
-            setCheckedContextList(storedRequest.context || defaultContextCheckedList);
-            setCheckedContentList(storedRequest.content || defaultContentCheckedList);
-            setCommandName(storedRequest.commandName || '');
-            setCommandShortcut(storedRequest.commandShortcut || '');
-            setAssistantId(storedRequest.assistantId || '');
-            setThreadId(storedRequest.threadId || '');
-            setCommandsContent(storedRequest.commands || '');
-            setSelectedValue(storedRequest.select || defaultValue);
+            const assistantID = getDefaultAssistantId()
+
+            if (storedRequest) {
+                setCheckedIdeasList(storedRequest.ideas || defaultIdeasCheckedList);
+                setCheckedContextList(storedRequest.context || defaultContextCheckedList);
+                setCheckedContentList(storedRequest.content || defaultContentCheckedList);
+                setCommandName(storedRequest.commandName || '');
+                setCommandShortcut(storedRequest.commandShortcut || '');
+                setAssistantId(assistantID || '');
+                setThreadId(storedRequest.threadId || '');
+                setCommandsContent(storedRequest.commands || '');
+                setSelectedValue(storedRequest.select || defaultValue);
+            }
         }
     }, []);
+
+
 
     return (
         <div
@@ -139,19 +150,19 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                     <div className='flex flex-col justify-between h-[250px] w-full'>
                         <div className="w-[full] flex justify-between items-center">
                             <h1>Command Name</h1>
-                            <Input placeholder="Input" className='w-[300px]' value={commandName} disabled={editAble ? false : true} onChange={(e) => { setCommandName(e.target.value); setIsClient(true); handleOnChange(e) }} />
+                            <Input placeholder="Input" className='w-[300px]' value={commandName} disabled={isEditing} onChange={(e) => { setCommandName(e.target.value); setIsClient(true); handleOnChange(e) }} />
                         </div>
                         <div className="w-[full] flex justify-between items-center">
                             <h1>Command Shortcut</h1>
-                            <Input placeholder="Input" className='w-[300px]' value={commandShortcut} disabled={editAble ? false : true} onChange={(e) => { setCommandShortcut(e.target.value); setIsClient(true); handleOnChange(e) }} />
+                            <Input placeholder="Input" className='w-[300px]' value={commandShortcut} disabled={isEditing} onChange={(e) => { setCommandShortcut(e.target.value); setIsClient(true); handleOnChange(e) }} />
                         </div>
                         <div className="w-[full] flex justify-between items-center">
                             <h1>Assistant Id</h1>
-                            <Input placeholder="Input" className='w-[300px]' value={assistantId} disabled={editAble ? false : true} onChange={(e) => { setAssistantId(e.target.value); setIsClient(true); handleOnChange(e) }} />
+                            <Input placeholder="Input" className='w-[300px]' value={assistantId} disabled={isEditing} onChange={(e) => { setAssistantId(e.target.value); setIsClient(true); handleOnChange(e) }} />
                         </div>
                         <div className="w-[full] flex justify-between items-center">
                             <h1>Thread Id</h1>
-                            <Input placeholder="Input" className='w-[300px]' value={threadId} disabled={editAble ? false : true} onChange={(e) => { setThreadId(e.target.value); setIsClient(true); handleOnChange(e) }} />
+                            <Input placeholder="Input" className='w-[300px]' value={threadId} disabled={isEditing} onChange={(e) => { setThreadId(e.target.value); setIsClient(true); handleOnChange(e) }} />
                         </div>
                     </div>
                 </div>
@@ -161,7 +172,7 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                         onChange={(value) => { handleChange(value); setIsClient(true); }}
                         value={selectedValue}
                         defaultValue={selectedValue}
-                        disabled={editAble ? false : true}
+                        disabled={isEditing}
                     >
                         <Option value="Node type">Node type</Option>
                         <Option value="Idea">Create Idea</Option>
@@ -191,10 +202,10 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                                         setIsClient(true);
                                     }}
                                     className="w-[23%] flex justify-center items-center"
-                                    disabled={editAble ? false : true}
+                                    disabled={isEditing}
                                 />
                             ))}
-                            <Checkbox indeterminate={indeterminateIdeas} onChange={onCheckIdeasAllChange} checked={checkIdeasAll} disabled={editAble ? false : true} className="w-[23%] flex justify-center items-center" />
+                            <Checkbox indeterminate={indeterminateIdeas} onChange={onCheckIdeasAllChange} checked={checkIdeasAll} disabled={isEditing} className="w-[23%] flex justify-center items-center" />
                         </div>
                         <div className='w-full flex'>
                             <div className='w-[31%] flex items-center justify-center'><h1>Context</h1></div>
@@ -210,11 +221,11 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                                         setCheckedContextList(newList);
                                         setIsClient(true);
                                     }}
-                                    disabled={editAble ? false : true}
+                                    disabled={isEditing}
                                     className="w-[23%] flex justify-center items-center"
                                 />
                             ))}
-                            <Checkbox indeterminate={indeterminateContext} disabled={editAble ? false : true} onChange={onCheckContextAllChange} checked={checkContextAll} className="w-[23%] flex justify-center items-center" />
+                            <Checkbox indeterminate={indeterminateContext} disabled={isEditing} onChange={onCheckContextAllChange} checked={checkContextAll} className="w-[23%] flex justify-center items-center" />
                         </div>
                         <div className='w-full flex'>
                             <div className='w-[31%] flex items-center justify-center'><h1>Content</h1></div>
@@ -230,11 +241,11 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                                         setCheckedContentList(newList);
                                         setIsClient(true);
                                     }}
-                                    disabled={editAble ? false : true}
+                                    disabled={isEditing}
                                     className="w-[23%] flex justify-center items-center"
                                 />
                             ))}
-                            <Checkbox indeterminate={indeterminateContent} disabled={editAble ? false : true} onChange={onCheckContentAllChange} checked={checkContentAll} className="w-[23%] flex justify-center items-center" />
+                            <Checkbox indeterminate={indeterminateContent} disabled={isEditing} onChange={onCheckContentAllChange} checked={checkContentAll} className="w-[23%] flex justify-center items-center" />
                         </div>
                     </div>
                 </div>
@@ -246,7 +257,7 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                     className="w-full text-[15px] whitespace-pre-line"
                     onChange={(e) => { setCommandsContent(e.target.value); setIsClient(true); }}
                     value={commandsContent}
-                    disabled={editAble ? false : true}
+                    disabled={isEditing}
                 />
             </div>
             <div className='w-full flex justify-end relative'>
@@ -261,10 +272,10 @@ export default function Command({ id, onDelete, onEdit, onApply }: CommandProps)
                 )}
                 <div className='flex gap-[15px]'>
                     {
-                        editAble ?
-                            <Button style={{ backgroundColor: "#1677ff", color: "#ffffff", width: "75px" }} onClick={() => { setEditAble(false); onApply(id); }}>Apply</Button>
+                        isEditing ?
+                            <Button style={{ backgroundColor: "#1677ff", color: "#ffffff", width: "75px" }} onClick={() => { onEdit(id); }}>Edit</Button>
                             :
-                            <Button style={{ backgroundColor: "#1677ff", color: "#ffffff", width: "75px" }} onClick={() => { setEditAble(true); onEdit(id); }}>Edit</Button>
+                            <Button style={{ backgroundColor: "#1677ff", color: "#ffffff", width: "75px" }} onClick={() => { onApply(id); }}>Apply</Button>
                     }
                     <Button style={{ backgroundColor: "#212121", color: "#ffffff", width: "75px" }} onClick={() => { setShowModal(true) }}>Delete</Button>
                 </div>
