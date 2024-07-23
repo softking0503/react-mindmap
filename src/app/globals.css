@@ -29,3 +29,7 @@ body {
 #jsmind_container {
   width: 100%;
 }
+
+.backgroundColor {
+  background-color: rgba(17, 17, 17, 0.747);
+}
