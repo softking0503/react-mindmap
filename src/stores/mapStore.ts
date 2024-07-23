@@ -850,7 +850,9 @@ const useMindMapStore = create<MindMapState>((set) => ({
         );
 
         const content = response.data.message.content;
-        const type = response.data.message.type;
+        const type = response.data.message.type
+          ? response.data.message.type
+          : nodeType;
 
         if (nodeType != "Edit Node") {
           if (Array.isArray(content)) {

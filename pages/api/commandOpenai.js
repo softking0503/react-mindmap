@@ -95,11 +95,20 @@ async function checkStatus(openai, threadId, runId) {
 
 function normalizeResponse(messageContent) {
   const keys = Object.keys(messageContent);
-  const content = messageContent[keys[1]];
-  return {
-    type: messageContent.type,
-    content,
-  };
+  if (messageContent.type) {
+    const content = messageContent[keys[1]];
+
+    return {
+      type: messageContent.type,
+      content,
+    };
+  } else {
+    const content = messageContent[keys[0]];
+    return {
+      type: "",
+      content,
+    };
+  }
 }
 
 function handleError(res, error) {
