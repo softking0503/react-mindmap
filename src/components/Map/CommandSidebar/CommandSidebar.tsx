@@ -67,8 +67,8 @@ const CommandSidebar: React.FC = () => {
     event.preventDefault();
     setContextMenu({
       visible: true,
-      x: event.clientX,
-      y: event.clientY,
+      x: event.pageX,
+      y: event.pageY,
       command: item,
       index: index,
     });
