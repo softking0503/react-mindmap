@@ -71,12 +71,11 @@ export default function CommandsGroup() {
   const createThreadID = async () => {
     try {
       const openAIKey = getOpenAIKey();
-      const assistantId = getDefaultAssistantId();
 
       const response = await axios.post("/api/openai", {
         openAIKey: openAIKey,
-        defaultAssistantId: assistantId,
       });
+      console.log(response);
       return response.data.id;
     } catch (error: any) {
       if (error.response.status == 401) {

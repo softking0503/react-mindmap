@@ -2,8 +2,7 @@ import OpenAI from "openai";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
-    const { name, instructions, model, openAIKey, defaultAssistantId } =
-      req.body;
+    const { openAIKey } = req.body;
 
     if (openAIKey) {
       const openai = new OpenAI({

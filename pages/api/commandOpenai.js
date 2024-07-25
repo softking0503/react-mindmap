@@ -44,6 +44,7 @@ export default async function handler(req, res) {
     const run = await openai.beta.threads.runs.create(threadId, {
       assistant_id: defaultAssistantId,
     });
+
     await checkStatus(openai, threadId, run.id);
 
     const messages = await openai.beta.threads.messages.list(threadId);
@@ -77,7 +78,9 @@ async function createThreadMessage(
 ) {
   return await openai.beta.threads.messages.create(threadId, {
     role: "user",
-    content: `Be specific and don't write more than 10 words. Current mindmap is ${nodes} and read carefully ${brotherNodes} nodes and ${parentNodes} nodes of ${selectNode}. ${prompt} for node of ${selectNode}.`,
+    content: `Be specific and don't write more than 10 words.
+    Current mindmap is ${nodes} and read carefully ${brotherNodes} brother nodes and ${parentNodes} parent nodes of ${selectNode}.
+    ${prompt} for node of ${selectNode}.`,
   });
 }
 
