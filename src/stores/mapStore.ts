@@ -1,71 +1,18 @@
 import { message } from "antd";
 import { create } from "zustand";
 import axios from "axios";
+import {
+  Node,
+  checkState,
+  Commands,
+  ReturnCommand,
+  mindMap,
+  configuration,
+} from "@/utils/type";
+import { loadFromJSON, loadFromMM, restoreData } from "@/utils/data";
+
 const cancelToken = axios.CancelToken;
 let cancel;
-
-export interface Node {
-  id: string;
-  parentid?: string;
-  isroot?: boolean;
-  topic: string;
-  type: string;
-}
-
-export interface checkState {
-  context: boolean;
-  content: boolean;
-  idea: boolean;
-}
-
-export interface Commands {
-  commandName: string;
-  commandShortcut: string;
-  assistantId: string;
-  threadId: string;
-  commands: string;
-  select: string;
-  brothers: checkState;
-  parent: checkState;
-  all: checkState;
-  commandKey: string;
-}
-
-export interface ReturnCommand {
-  commandName: string;
-  commandShortcut: string;
-  assistantId: string;
-  threadId: string;
-  commands: string;
-  select: string;
-  ideas: string[];
-  context: string[];
-  content: string[];
-  commandKey: string;
-}
-
-export interface configuration {
-  openAIKey: string;
-  defaultAssistantId: string;
-  defaultThreadId: string;
-  commands: Commands[];
-}
-
-export interface mindMap {
-  meta: {
-    name: string;
-    author: string;
-    version: string;
-  };
-  format: string;
-  projectName: string;
-  RequestInstruction: string;
-  data: Node[];
-  configuration: configuration;
-}
-
-// Assuming loadFromJSON is imported from '@/utils/data'
-import { loadFromJSON, loadFromMM, restoreData } from "@/utils/data";
 
 const defaultReturnCommand: ReturnCommand = {
   commandName: "",
@@ -195,7 +142,7 @@ const jsonToXML = (mindMap: Node[]): string => {
   return xmlString;
 };
 
-const jsonToXMLSelectNode = (node: any): string => {
+const jsonToXMLSelectNode = (node: Node): string => {
   let backgroundColor = "";
 
   if (node.type === "Idea") {
@@ -853,7 +800,7 @@ const useMindMapStore = create<MindMapState>((set) => ({
           brother = data[0].configuration.commands[key].brothers.idea
             ? true
             : false;
-        } else if (nodeType.toLowerCase() == "context") {
+        } else if (node.data.type.toLowerCase() == "context") {
           parent = data[0].configuration.commands[key].parent.context
             ? true
             : false;
@@ -868,6 +815,8 @@ const useMindMapStore = create<MindMapState>((set) => ({
             ? true
             : false;
         }
+
+        console.log(parent, brother);
 
         let promptNodes = [];
         let nodeData: Node;
@@ -893,13 +842,15 @@ const useMindMapStore = create<MindMapState>((set) => ({
           };
           promptNodes.push(nodeData);
 
-          if (brother) {
-            for (let i = 0; i < data[0].data.length; i++) {
-              if (
-                data[0].data[i].parentid == node.parent.id &&
-                data[0].data[i].id != node.id
-              ) {
-                promptNodes.push(data[0].data[i]);
+          if (node.parent) {
+            if (brother) {
+              for (let i = 0; i < data[0].data.length; i++) {
+                if (
+                  data[0].data[i].parentid == node.parent.id &&
+                  data[0].data[i].id != node.id
+                ) {
+                  promptNodes.push(data[0].data[i]);
+                }
               }
             }
           }

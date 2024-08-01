@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import useMindMapStore, { Commands, mindMap } from "@/stores/mapStore";
+import useMindMapStore from "@/stores/mapStore";
+import { Commands, mindMap } from "@/utils/type";
 import "jsmind/style/jsmind.css";
 import CommandSidebar from "./CommandSidebar/CommandSidebar";
 import {

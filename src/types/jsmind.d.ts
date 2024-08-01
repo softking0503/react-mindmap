@@ -1,4 +1,3 @@
-// /types/jsmind.d.ts
 declare module "jsmind" {
   interface Options {
     container: string;

@@ -1,6 +1,5 @@
 import { message } from "antd";
 import { ImportedDataState } from "./type";
-import { Node } from "@/stores/mapStore";
 
 export const ideas = ["Brother", "Parent"];
 export const defaultIdeasCheckedList = ["Brother", "Parent"];

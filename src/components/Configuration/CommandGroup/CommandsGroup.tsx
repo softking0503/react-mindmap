@@ -3,9 +3,9 @@ import { Button, Input, notification } from "antd";
 import Command from "./Command/Command";
 import useMindMapStore from "@/stores/mapStore";
 import { useEffect, useState } from "react";
-import { Commands } from "@/stores/mapStore";
 import { Reorder } from "framer-motion";
 import axios from "axios";
+import { Commands } from "@/utils/type";
 
 export default function CommandsGroup() {
   const [openAIKey, setOpenAIKey] = useState<string>("");
