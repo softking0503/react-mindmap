@@ -843,12 +843,10 @@ const useMindMapStore = create<MindMapState>((set) => ({
       try {
         const currentCommand = data[0].configuration.commands[key];
 
-        console.log(node);
-
         let parent;
         let brother;
 
-        if (nodeType.toLowerCase() == "idea") {
+        if (node.data.type.toLowerCase() == "idea") {
           parent = data[0].configuration.commands[key].parent.idea
             ? true
             : false;
@@ -870,8 +868,6 @@ const useMindMapStore = create<MindMapState>((set) => ({
             ? true
             : false;
         }
-
-        console.log(parent, brother);
 
         let promptNodes = [];
         let nodeData: Node;
@@ -959,11 +955,7 @@ const useMindMapStore = create<MindMapState>((set) => ({
           }
         }
 
-        console.log(promptNodes);
-
         const xmlData = jsonToXML(promptNodes);
-
-        console.log(xmlData);
 
         const selectNodeXmlData = jsonToXMLSelectNode(node);
 
