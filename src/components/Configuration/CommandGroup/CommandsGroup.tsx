@@ -26,7 +26,6 @@ export default function CommandsGroup() {
     saveCommandReorder,
     getDefaultThreadId,
     getOpenAIKey,
-    getDefaultAssistantId,
   } = useMindMapStore();
 
   const deleteComponent = (index: number) => {
@@ -131,7 +130,7 @@ export default function CommandsGroup() {
 
   const handleAddCommand = () => {
     addCommand();
-    const newCommandIndex = commands.length; // The new command will be the last one in the array
+    const newCommandIndex = commands.length;
     setEditingCommandId(newCommandIndex);
     setEdit(false);
     setIsClient(true);

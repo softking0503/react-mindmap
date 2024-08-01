@@ -156,6 +156,8 @@ const defaultMindMap: mindMap = {
 };
 
 const jsonToXML = (mindMap: Node[]): string => {
+  const includedNodeIds = new Set<string>();
+
   const getNodeXML = (node: Node): string => {
     let backgroundColor = "";
 
@@ -169,17 +171,28 @@ const jsonToXML = (mindMap: Node[]): string => {
 
     const children = mindMap.filter((n) => n.parentid === node.id);
     const childrenXML = children.map(getNodeXML).join("");
+    includedNodeIds.add(node.id);
+
     return `<node ID="${node.id}" TEXT="${node.topic}"${
       node.isroot ? ' ROOT="true"' : ""
     } BACKGROUND_COLOR="${backgroundColor}">${childrenXML}</node>`;
   };
 
   const rootNode = mindMap.find((n) => n.isroot);
-  return rootNode
-    ? `<map version="1.0.1">\n<!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->\n${getNodeXML(
-        rootNode
-      )}\n</map>`
-    : "";
+  let xmlString = `<map version="1.0.1">\n<!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->\n`;
+
+  if (rootNode) {
+    xmlString += `${getNodeXML(rootNode)}\n`;
+  } else {
+    mindMap.forEach((node) => {
+      if (!includedNodeIds.has(node.id)) {
+        xmlString += `${getNodeXML(node)}\n`;
+      }
+    });
+  }
+
+  xmlString += `</map>`;
+  return xmlString;
 };
 
 const jsonToXMLSelectNode = (node: any): string => {
@@ -830,7 +843,127 @@ const useMindMapStore = create<MindMapState>((set) => ({
       try {
         const currentCommand = data[0].configuration.commands[key];
 
-        const xmlData = jsonToXML(data[0].data);
+        console.log(node);
+
+        let parent;
+        let brother;
+
+        if (nodeType.toLowerCase() == "idea") {
+          parent = data[0].configuration.commands[key].parent.idea
+            ? true
+            : false;
+          brother = data[0].configuration.commands[key].brothers.idea
+            ? true
+            : false;
+        } else if (nodeType.toLowerCase() == "context") {
+          parent = data[0].configuration.commands[key].parent.context
+            ? true
+            : false;
+          brother = data[0].configuration.commands[key].brothers.context
+            ? true
+            : false;
+        } else {
+          parent = data[0].configuration.commands[key].parent.content
+            ? true
+            : false;
+          brother = data[0].configuration.commands[key].brothers.content
+            ? true
+            : false;
+        }
+
+        console.log(parent, brother);
+
+        let promptNodes = [];
+        let nodeData: Node;
+
+        if (parent) {
+          if (node.parent) {
+            nodeData = {
+              id: node.parent.id,
+              parentid: node.parent.parent ? node.parent.parent.id : undefined,
+              isroot: node.parent.parent ? false : true,
+              topic: node.parent.topic,
+              type: node.parent.data.type,
+            };
+            promptNodes.push(nodeData);
+          }
+
+          nodeData = {
+            id: node.id,
+            parentid: node.parent ? node.parent.id : undefined,
+            isroot: node.parent ? false : true,
+            topic: node.topic,
+            type: node.data.type,
+          };
+          promptNodes.push(nodeData);
+
+          if (brother) {
+            for (let i = 0; i < data[0].data.length; i++) {
+              if (
+                data[0].data[i].parentid == node.parent.id &&
+                data[0].data[i].id != node.id
+              ) {
+                promptNodes.push(data[0].data[i]);
+              }
+            }
+          }
+
+          if (node.children) {
+            for (let i = 0; i < node.children.length; i++) {
+              nodeData = {
+                id: node.children[i].id,
+                parentid: node.children[i].parent
+                  ? node.children[i].parent.id
+                  : undefined,
+                isroot: node.children[i].parent ? false : true,
+                topic: node.children[i].topic,
+                type: node.children[i].data.type,
+              };
+              promptNodes.push(nodeData);
+            }
+          }
+        } else {
+          nodeData = {
+            id: node.id,
+            parentid: node.parent ? node.parent.id : undefined,
+            isroot: node.parent ? false : true,
+            topic: node.topic,
+            type: node.data.type,
+          };
+          promptNodes.push(nodeData);
+
+          if (brother) {
+            for (let i = 0; i < data[0].data.length; i++) {
+              if (
+                data[0].data[i].parentid == node.parent.id &&
+                data[0].data[i].id != node.id
+              ) {
+                promptNodes.push(data[0].data[i]);
+              }
+            }
+          }
+
+          if (node.children) {
+            for (let i = 0; i < node.children.length; i++) {
+              nodeData = {
+                id: node.children[i].id,
+                parentid: node.children[i].parent
+                  ? node.children[i].parent.id
+                  : undefined,
+                isroot: node.children[i].parent ? false : true,
+                topic: node.children[i].topic,
+                type: node.children[i].data.type,
+              };
+              promptNodes.push(nodeData);
+            }
+          }
+        }
+
+        console.log(promptNodes);
+
+        const xmlData = jsonToXML(promptNodes);
+
+        console.log(xmlData);
 
         const selectNodeXmlData = jsonToXMLSelectNode(node);
 
@@ -843,16 +976,12 @@ const useMindMapStore = create<MindMapState>((set) => ({
             threadId: data[0].configuration.defaultThreadId,
             nodes: xmlData,
             selectNode: selectNodeXmlData,
-            brothers: currentCommand.brothers,
-            parents: currentCommand.parent,
           },
           { cancelToken: cancelToken }
         );
 
         const content = response.data.message.content;
-        const type = response.data.message.type
-          ? response.data.message.type
-          : nodeType;
+        const type = nodeType;
 
         if (nodeType != "Edit Node") {
           if (Array.isArray(content)) {
@@ -879,7 +1008,6 @@ const useMindMapStore = create<MindMapState>((set) => ({
 
               window.dispatchEvent(new Event("projectChanged"));
 
-              // Dispatch a custom event with the updated threadId
               const event = new CustomEvent("threadIdUpdated", {
                 detail: { key },
               });
@@ -889,7 +1017,6 @@ const useMindMapStore = create<MindMapState>((set) => ({
 
               window.dispatchEvent(new Event("projectChanged"));
 
-              // Dispatch a custom event with the updated threadId
               const event = new CustomEvent("threadIdUpdated", {
                 detail: { key },
               });
@@ -917,7 +1044,6 @@ const useMindMapStore = create<MindMapState>((set) => ({
 
               window.dispatchEvent(new Event("projectChanged"));
 
-              // Dispatch a custom event with the updated threadId
               const event = new CustomEvent("threadIdUpdated", {
                 detail: { key },
               });
@@ -927,7 +1053,6 @@ const useMindMapStore = create<MindMapState>((set) => ({
 
               window.dispatchEvent(new Event("projectChanged"));
 
-              // Dispatch a custom event with the updated threadId
               const event = new CustomEvent("threadIdUpdated", {
                 detail: { key },
               });
@@ -953,7 +1078,6 @@ const useMindMapStore = create<MindMapState>((set) => ({
 
             window.dispatchEvent(new Event("projectChanged"));
 
-            // Dispatch a custom event with the updated threadId
             const event = new CustomEvent("threadIdUpdated", {
               detail: { key },
             });

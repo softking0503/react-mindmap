@@ -223,9 +223,6 @@ const MindMap = () => {
     const selectedNode = jmRef.current?.get_selected_node();
     if (!selectedNode) return;
 
-    console.log(event);
-
-
     setContextMenu({
       visible: true,
       x: event.pageX + 5,

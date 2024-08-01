@@ -14,16 +14,11 @@ export default async function handler(req, res) {
     threadId,
     nodes,
     selectNode,
-    brothers,
-    parents,
   } = req.body;
 
   if (!openAIKey) {
     return res.status(400).json({ error: "OpenAI API key is required" });
   }
-
-  const brotherNodes = getNodeSummary(brothers);
-  const parentNodes = getNodeSummary(parents);
 
   const openai = new OpenAI({ apiKey: openAIKey });
 
@@ -34,8 +29,6 @@ export default async function handler(req, res) {
       openai,
       threadId,
       nodes,
-      brotherNodes,
-      parentNodes,
       selectNode,
       prompt
     );
@@ -60,27 +53,18 @@ export default async function handler(req, res) {
   }
 }
 
-function getNodeSummary(nodes) {
-  return Object.entries(nodes)
-    .filter(([, value]) => value)
-    .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1))
-    .join(", ");
-}
-
 async function createThreadMessage(
   openai,
   threadId,
   nodes,
-  brotherNodes,
-  parentNodes,
   selectNode,
   prompt
 ) {
   return await openai.beta.threads.messages.create(threadId, {
     role: "user",
     content: `Be specific and don't write more than 10 words.
-    Current mindmap is ${nodes} and read carefully ${brotherNodes} brother nodes and ${parentNodes} parent nodes of ${selectNode}.
-    ${prompt} for node of ${selectNode}.`,
+    Current mindmap is ${nodes} and current node is ${selectNode}.
+    ${prompt}`,
   });
 }
 
