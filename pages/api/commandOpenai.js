@@ -1,5 +1,3 @@
-// pages/api/commandOpenai.js
-
 import OpenAI from "openai";
 
 export default async function handler(req, res) {
@@ -15,9 +13,6 @@ export default async function handler(req, res) {
     nodes,
     selectNode,
   } = req.body;
-
-  console.log(req.body);
-
 
   if (!openAIKey) {
     return res.status(400).json({ error: "OpenAI API key is required" });
@@ -66,8 +61,8 @@ async function createThreadMessage(
   return await openai.beta.threads.messages.create(threadId, {
     role: "user",
     content: `Be specific and don't write more than 10 words.
-    Current mindmap is ${nodes} and current node is ${selectNode}.
-    ${prompt}`,
+      Current mindmap is ${nodes} and current node is ${selectNode}.
+      ${prompt}`,
   });
 }
 
