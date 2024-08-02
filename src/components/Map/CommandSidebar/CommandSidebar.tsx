@@ -1,7 +1,8 @@
 // src/components/Map/CommandSidebar/commandSidebar.tsx
 import React, { useEffect, useState, DragEvent, useRef } from "react";
 import { message } from "antd";
-import useMindMapStore, { Commands } from "@/stores/mapStore";
+import useMindMapStore from "@/stores/mapStore";
+import { Commands } from "@/utils/type";
 
 const CommandSidebar: React.FC = () => {
   const { getCommands, setCommandToExecute, deleteCommand } = useMindMapStore();
