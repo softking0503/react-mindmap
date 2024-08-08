@@ -230,8 +230,8 @@ const MindMap = () => {
 
     setContextMenu({
       visible: true,
-      x: event.offsetX + 5,
-      y: event.offsetY + 5,
+      x: event.clientX + 5,
+      y: event.clientY + 5,
     });
   };
 
