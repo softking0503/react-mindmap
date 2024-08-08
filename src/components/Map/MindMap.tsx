@@ -133,6 +133,8 @@ const MindMap = () => {
       return;
     }
 
+    console.log(nodeType);
+
     if (!nodeType || nodeType === "" || nodeType === "Node type") {
       setShowLoading(false);
       message.error({
@@ -224,10 +226,12 @@ const MindMap = () => {
     const selectedNode = jmRef.current?.get_selected_node();
     if (!selectedNode) return;
 
+    console.log(event, ": event");
+
     setContextMenu({
       visible: true,
-      x: event.pageX + 5,
-      y: event.pageY + 5,
+      x: event.offsetX + 5,
+      y: event.offsetY + 5,
     });
   };
 
@@ -370,6 +374,7 @@ const MindMap = () => {
   const handleCancel = () => {
     if (cancelTokenSource) {
       setShowLoading(false);
+      setIsShortcutPress(false);
       cancelTokenSource.cancel("Request canceled by user.");
       notification.info({
         message: "Command is stopped",
@@ -437,6 +442,8 @@ const MindMap = () => {
     }
 
     const command = getCommandByShortcut(newShortcut);
+
+    console.log(command);
 
     if (command) {
       handleExecuteCommand(
@@ -536,7 +543,7 @@ const MindMap = () => {
           </ul>
         </div>
       )}
-      <div className="absolute left-30 top-[300px] w-[280px] z-10">
+      <div className="absolute left-30 top-[300px] w-[280px] z-10 max-[1365px]:top-[530px] max-[630px]:top-[610px] max-[630px]:w-[238px]">
         <div className="border-[1px] border-[solid] border-black h-[40px] w-full relative flex justify-center items-center bg-white">
           <h1>Command Bar</h1>
           <div className="absolute right-0 top-0 w-[75px] h-full flex justify-between items-center px-[15px]">

@@ -71,13 +71,14 @@ export default function OptionGroup() {
 
   return (
     <>
-      <div className="flex justify-between items-center w-full">
-        <div className="flex flex-col gap-2.5">
-          <div className="flex gap-3.75 items-center">
+      <div className="flex justify-between items-center w-full max-[1365px]:flex-col">
+        <div className="flex flex-col gap-2.5 p-[20px] max-[1365px]:w-full max-[500px]:px-0">
+          <div className="flex gap-3.75 items-center justify-between max-[630px]:flex-col max-[630px]:gap-[10px]">
             <Select
               value={defaultProjectName}
-              style={{ width: 300, height: 35 }}
+              style={{ height: 35 }}
               onChange={handleChange}
+              className="grow w-[300px] max-[630px]:w-full"
             >
               {projectNames.map((name, index) => (
                 <Option key={index} value={name}>
@@ -85,7 +86,11 @@ export default function OptionGroup() {
                 </Option>
               ))}
             </Select>
-            <Button type="primary" onClick={handleCreateNew}>
+            <Button
+              type="primary"
+              onClick={handleCreateNew}
+              className="max-[630px]:w-full"
+            >
               Create New
             </Button>
           </div>
@@ -99,48 +104,53 @@ export default function OptionGroup() {
             />
           </div>
         </div>
-        <div className="flex gap-[10px] items-center">
+        <div className="flex gap-[10px] items-center p-[20px] max-[1365px]:w-full justify-between max-[630px]:flex-col max-[630px]:w-full max-[500px]:px-0">
           <Button
             type="primary"
-            style={{ width: 120 }}
             onClick={handleChangeProjectName}
+            className="grow w-[120px] max-[630px]:w-full"
           >
             Save
           </Button>
           <Button
             type="primary"
             danger
-            style={{ color: "#fff", width: 120 }}
+            style={{ color: "#fff" }}
             onClick={deleteMindMapProject}
+            className="grow w-[120px] max-[630px]:w-full"
           >
             Delete
           </Button>
         </div>
-        <div className="flex flex-col gap-[10px]">
-          <div className="flex gap-5">
+        <div className="flex flex-col gap-[10px] p-[20px] max-[1365px]:w-full max-[630px]:gap-3 max-[500px]:px-0">
+          <div className="flex gap-5 justify-between max-[630px]:flex-col max-[630px]:gap-3">
             <Button
               type="primary"
-              style={{ width: 200 }}
               onClick={loadFreeMind}
+              className="grow w-[200px] max-[630px]:w-full"
             >
               Load Freemind
             </Button>
             <Button
               type="primary"
-              style={{ width: 200 }}
               onClick={downloadFreemind}
+              className="grow w-[200px] max-[630px]:w-full"
             >
               Download Freemind
             </Button>
           </div>
-          <div className="flex gap-5">
-            <Button type="primary" style={{ width: 200 }} onClick={loadProject}>
+          <div className="flex gap-5 justify-between max-[630px]:flex-col max-[630px]:gap-3">
+            <Button
+              type="primary"
+              onClick={loadProject}
+              className="grow w-[200px] max-[630px]:w-full"
+            >
               Load Project
             </Button>
             <Button
               type="primary"
-              style={{ width: 200 }}
               onClick={downloadProject}
+              className="grow w-[200px] max-[630px]:w-full"
             >
               Download Project
             </Button>

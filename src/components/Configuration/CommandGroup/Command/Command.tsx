@@ -4,9 +4,14 @@ import React, {
   DragEvent,
   KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Button, Input, Select, Checkbox, message } from "antd";
+import { Button, Input, Select, Checkbox, message, Modal } from "antd";
 import type { CheckboxProps } from "antd";
-import { FullscreenOutlined } from "@ant-design/icons";
+import {
+  FullscreenOutlined,
+  PaperClipOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import useMindMapStore from "@/stores/mapStore";
 
 const { Option } = Select;
@@ -53,6 +58,7 @@ export default function Command({
   } = useMindMapStore();
 
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
 
   const [isClient, setIsClient] = useState(false);
@@ -258,91 +264,129 @@ export default function Command({
     };
   }, [id]);
 
+  const overflow = isEditing ? "overflow-hidden" : "overflow-scroll";
+
   return (
-    <div className="w-full border-[1px] border-solid border-black px-[70px] py-[25px] flex flex-col gap-[30px] bg-[#f5f5f5] relative mt-[40px]">
-      <div className="absolute right-[10px] top-[10px]">
-        <FullscreenOutlined className="text-[20px]" />
+    <div
+      className={`w-full border-[1px] border-solid border-black px-[70px] py-[25px] flex flex-col gap-[30px] bg-[#f5f5f5] relative mt-[40px] max-[1175px]:px-[35px] h-[610px] ${overflow}`}
+    >
+      <div className="absolute right-[10px] top-[10px] flex gap-2">
+        {isEditing ? (
+          <EditOutlined
+            className="text-[20px] max-[465px]:text-[16px]"
+            onClick={() => {
+              onEdit(id);
+            }}
+          />
+        ) : (
+          <PaperClipOutlined
+            className="text-[20px] max-[465px]:text-[16px]"
+            onClick={() => {
+              onApply(id);
+              setCommandThreadId();
+            }}
+          />
+        )}
+        <DeleteOutlined
+          className="text-[20px] max-[465px]:text-[16px]"
+          onClick={() => {
+            setShowDeleteModal(true);
+          }}
+        />
+        <FullscreenOutlined className="text-[20px] max-[465px]:text-[16px]" />
       </div>
-      <div className="w-full flex justify-between gap-[80px]">
-        <div className="w-[500px] flex justify-between">
-          <div className="flex flex-col justify-between h-[250px] w-full">
-            <div className="w-[full] flex justify-between items-center">
-              <h1>Command Name</h1>
-              <Input
-                placeholder="Input"
-                className="w-[300px]"
-                value={commandName}
-                disabled={isEditing}
-                onChange={(e) => {
-                  setCommandName(e.target.value);
-                  setIsClient(true);
-                  handleOnChange(e);
-                  setIsKeypress(false);
-                }}
-                onClick={() => {
-                  setIsKeypress(false);
-                }}
-              />
+      <div className="w-full flex justify-between gap-[80px] max-[1595px]:flex-col">
+        <div className="w-[500px] flex justify-between max-[1595px]:w-full">
+          <div className="flex flex-col justify-between h-[250px] w-full gap-5 max-[850px]:h-[320px]">
+            <div className="w-[full] flex justify-between items-center max-[850px]:flex-col max-[850px]:gap-2">
+              <div className="w-[200px] max-[850px]:w-full">
+                <h1 className="max-[465px]:text-[14px]">Command Name</h1>
+              </div>
+              <div className="grow max-[850px]:w-full">
+                <Input
+                  placeholder="Input"
+                  value={commandName}
+                  disabled={isEditing}
+                  onChange={(e) => {
+                    setCommandName(e.target.value);
+                    setIsClient(true);
+                    handleOnChange(e);
+                    setIsKeypress(false);
+                  }}
+                  onClick={() => {
+                    setIsKeypress(false);
+                  }}
+                />
+              </div>
             </div>
-            <div className="w-[full] flex justify-between items-center">
-              <h1>Command Shortcut</h1>
-              <Input
-                placeholder="Input"
-                className="w-[300px]"
-                value={commandShortcut}
-                disabled={isEditing}
-                onClick={() => {
-                  setIsKeypress(true);
-                }}
-                onChange={(e) => {
-                  setCommandShortcut(e.target.value);
-                  setIsClient(true);
-                  handleOnChange(e);
-                  setIsKeypress(true);
-                }}
-              />
+            <div className="w-[full] flex justify-between items-center max-[850px]:flex-col max-[850px]:gap-2">
+              <div className="w-[200px] max-[850px]:w-full">
+                <h1 className="max-[465px]:text-[14px]">Command Shortcut</h1>
+              </div>
+              <div className="grow max-[850px]:w-full">
+                <Input
+                  placeholder="Input"
+                  value={commandShortcut}
+                  disabled={isEditing}
+                  onClick={() => {
+                    setIsKeypress(true);
+                  }}
+                  onChange={(e) => {
+                    setCommandShortcut(e.target.value);
+                    setIsClient(true);
+                    handleOnChange(e);
+                    setIsKeypress(true);
+                  }}
+                />
+              </div>
             </div>
-            <div className="w-[full] flex justify-between items-center">
-              <h1>Assistant Id</h1>
-              <Input
-                placeholder="Input"
-                className="w-[300px]"
-                value={assistantId}
-                disabled={isEditing}
-                onChange={(e) => {
-                  setAssistantId(e.target.value);
-                  setIsClient(true);
-                  handleOnChange(e);
-                  setIsKeypress(false);
-                }}
-                onClick={() => {
-                  setIsKeypress(false);
-                }}
-              />
+            <div className="w-[full] flex justify-between items-center max-[850px]:flex-col max-[850px]:gap-2">
+              <div className="w-[200px] max-[850px]:w-full">
+                <h1 className="max-[465px]:text-[14px]">Assistant Id</h1>
+              </div>
+              <div className="grow max-[850px]:w-full">
+                <Input
+                  placeholder="Input"
+                  value={assistantId}
+                  disabled={isEditing}
+                  onChange={(e) => {
+                    setAssistantId(e.target.value);
+                    setIsClient(true);
+                    handleOnChange(e);
+                    setIsKeypress(false);
+                  }}
+                  onClick={() => {
+                    setIsKeypress(false);
+                  }}
+                />
+              </div>
             </div>
-            <div className="w-[full] flex justify-between items-center">
-              <h1>Thread Id</h1>
-              <Input
-                placeholder="Input"
-                className="w-[300px]"
-                value={threadId}
-                disabled={isEditing}
-                onChange={(e) => {
-                  setThreadId(e.target.value);
-                  setIsClient(true);
-                  handleOnChange(e);
-                  setIsKeypress(false);
-                }}
-                onClick={() => {
-                  setIsKeypress(false);
-                }}
-              />
+            <div className="w-[full] flex justify-between items-center max-[850px]:flex-col max-[850px]:gap-2">
+              <div className="w-[200px] max-[850px]:w-full">
+                <h1 className="max-[465px]:text-[14px]">Thread Id</h1>
+              </div>
+              <div className="grow max-[850px]:w-full">
+                <Input
+                  placeholder="Input"
+                  value={threadId}
+                  disabled={isEditing}
+                  onChange={(e) => {
+                    setThreadId(e.target.value);
+                    setIsClient(true);
+                    handleOnChange(e);
+                    setIsKeypress(false);
+                  }}
+                  onClick={() => {
+                    setIsKeypress(false);
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
-        <div className="grow h-[250px] flex flex-col gap-[20px]">
+        <div className="grow flex flex-col gap-[20px] max-[1595px]:w-full max-[1595px]:h-[280px]">
           <Select
-            className="w-[650px]"
+            className="w-[650px] max-[1595px]:w-full"
             onChange={(value) => {
               handleChange(value);
               setIsClient(true);
@@ -357,8 +401,8 @@ export default function Command({
             <Option value="Content">Create Content</Option>
             <Option value="Edit Node">Edit Node</Option>
           </Select>
-          <div className="w-[650px] grow border-[#d9d9d9] border-black border-[1px] rounded-[5px] flex flex-col justify-between p-[30px]">
-            <div className="w-full flex">
+          <div className="w-[650px] grow border-black border-[1px] rounded-[5px] flex flex-col justify-between p-[30px] max-[1595px]:w-full overflow-scroll">
+            <div className="w-full flex max-[768px]:w-[432px]">
               <div className="w-[31%] flex items-center justify-center"></div>
               <div className="w-[23%] flex items-center justify-center">
                 <h1>Brother</h1>
@@ -370,7 +414,7 @@ export default function Command({
                 <h1>All</h1>
               </div>
             </div>
-            <div className="w-full flex">
+            <div className="w-full flex max-[768px]:w-[432px]">
               <div className="w-[31%] flex items.center justify.center">
                 <h1>Ideas</h1>
               </div>
@@ -398,7 +442,7 @@ export default function Command({
                 className="w-[23%] flex justify-center items-center"
               />
             </div>
-            <div className="w-full flex">
+            <div className="w-full flex max-[768px]:w-[432px]">
               <div className="w-[31%] flex items.center justify.center">
                 <h1>Context</h1>
               </div>
@@ -426,7 +470,7 @@ export default function Command({
                 className="w-[23%] flex justify-center items-center"
               />
             </div>
-            <div className="w-full flex">
+            <div className="w-full flex max-[768px]:w-[432px]">
               <div className="w-[31%] flex items.center justify.center">
                 <h1>Content</h1>
               </div>
@@ -476,7 +520,7 @@ export default function Command({
       </div>
       <div className="w-full flex justify-end relative">
         {showModal && (
-          <div className="absolute w-[220px] h-[150px] bg-[#ffffff] bottom-[20px] right-[50px] z-10 border-[1px] border-black border-solid rounded-[3px] px-[20px] py-[22px] flex flex-col justify-between">
+          <div className="absolute w-[220px] h-[150px] bg-[#ffffff] bottom-[20px] right-[50px] z-10 border-[1px] border-black border-solid rounded-[3px] px-[20px] py-[22px] flex flex-col justify-between max-[545px]:right-[10px]  max-[545px]:right-[-27px]">
             <h1 className="text-[18px]">
               You are going to
               <br />
@@ -511,6 +555,19 @@ export default function Command({
             </div>
           </div>
         )}
+        <Modal
+          open={showDeleteModal}
+          onOk={() => {
+            onDelete(id);
+            deleteCommand(id);
+            setShowDeleteModal(false);
+          }}
+          onCancel={() => {
+            setShowDeleteModal(false);
+          }}
+        >
+          <p>You are going to delete a command</p>
+        </Modal>
         <div className="flex gap-[15px]">
           {isEditing ? (
             <Button

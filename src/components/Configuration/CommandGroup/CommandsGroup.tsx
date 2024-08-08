@@ -147,11 +147,11 @@ export default function CommandsGroup() {
   return (
     <div className="w-full flex flex-col gap-[30px]">
       <div className="flex flex-col gap-[20px]">
-        <div className="w-[400px] flex justify-between items-center">
-          <h1>OPENAI KEY</h1>
+        <div className="w-[480px] flex justify-between items-center max-[650px]:flex-col max-[650px]:w-full max-[650px]:items-start max-[650px]:gap-3">
+          <h1 className="text-[15px] pl-1">OPENAI KEY</h1>
           <Input
             placeholder="Input"
-            className="w-[230px]"
+            className="w-[280px]  max-[650px]:w-full"
             value={openAIKey}
             onChange={(e) => {
               setOpenAIKey(e.target.value);
@@ -160,11 +160,11 @@ export default function CommandsGroup() {
             onPressEnter={setThreadID}
           />
         </div>
-        <div className="w-[400px] flex justify-between items-center">
-          <h1>Default Assistant Id</h1>
+        <div className="w-[480px] flex justify-between items-center max-[650px]:flex-col max-[650px]:w-full max-[650px]:items-start max-[650px]:gap-3">
+          <h1 className="text-[15px] pl-1">Default Assistant Id</h1>
           <Input
             placeholder="Input"
-            className="w-[230px]"
+            className="w-[280px]  max-[650px]:w-full"
             value={defaultAssistantId}
             onChange={(e) => {
               setDefaultAssistantId(e.target.value);
@@ -173,11 +173,11 @@ export default function CommandsGroup() {
             onPressEnter={setThreadID}
           />
         </div>
-        <div className="w-[400px] flex justify-between items-center">
-          <h1>Default Thread Id</h1>
+        <div className="w-[480px] flex justify-between items-center max-[650px]:flex-col max-[650px]:w-full max-[650px]:items-start max-[650px]:gap-3">
+          <h1 className="text-[15px] pl-1">Default Thread Id</h1>
           <Input
             placeholder="Input"
-            className="w-[230px]"
+            className="w-[280px]  max-[650px]:w-full"
             value={defaultThreadId}
             onChange={(e) => {
               setDefaultThreadId(e.target.value);
