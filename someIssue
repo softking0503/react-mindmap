@@ -1,0 +1,5 @@
+I developed mind map project using Next.js and integrated with open AI.
+And sometimes issue are occuring.
+So I can make thread id, assistant id using open AI key,  and I can send messages to open AI server, but I can't receive response.
+So I can send request, but I can't receive response.
+How can I fix this issue?
